@@ -1,0 +1,64 @@
+# FROM jupyter/pyspark-notebook
+FROM jupyter/pyspark-notebook:spark-3.4.1
+
+
+USER root
+
+
+# -----------------------------------
+# Install Python packages
+# -----------------------------------
+RUN pip install \
+    pymongo \
+    mysql-connector-python \
+    sqlalchemy pymysql \
+    matplotlib \
+    seaborn \
+    xlsxwriter \
+    pillow exifread
+
+# Create directory for JARs
+RUN mkdir -p /opt/jars
+
+# -----------------------------------
+# ✅ Download and Copy MySQL JDBC Driver (dual location)
+# -----------------------------------
+RUN wget https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar -P /opt/jars && \
+    cp /opt/jars/mysql-connector-j-8.0.33.jar /usr/local/spark/jars/
+
+# -----------------------------------
+# ✅ Download and Copy Spark SQL JAR for Spark 3.4.1
+# -----------------------------------
+RUN wget https://repo1.maven.org/maven2/org/apache/spark/spark-sql_2.12/3.4.1/spark-sql_2.12-3.4.1.jar -P /opt/jars && \
+    cp /opt/jars/spark-sql_2.12-3.4.1.jar /usr/local/spark/jars/
+
+# -----------------------------------
+# ✅ MongoDB Spark Connector for Spark 3.4.1
+# -----------------------------------
+RUN wget https://repo1.maven.org/maven2/org/mongodb/spark/mongo-spark-connector_2.12/10.1.1/mongo-spark-connector_2.12-10.1.1.jar -P /opt/jars && \
+    cp /opt/jars/mongo-spark-connector_2.12-10.1.1.jar /usr/local/spark/jars/
+
+RUN wget https://repo1.maven.org/maven2/org/mongodb/bson/4.9.0/bson-4.9.0.jar -P /opt/jars && \
+    cp /opt/jars/bson-4.9.0.jar /usr/local/spark/jars/
+
+RUN wget https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-core/4.9.0/mongodb-driver-core-4.9.0.jar -P /opt/jars && \
+    cp /opt/jars/mongodb-driver-core-4.9.0.jar /usr/local/spark/jars/
+
+RUN wget https://repo1.maven.org/maven2/org/mongodb/mongodb-driver-sync/4.9.0/mongodb-driver-sync-4.9.0.jar -P /opt/jars && \
+    cp /opt/jars/mongodb-driver-sync-4.9.0.jar /usr/local/spark/jars/
+
+RUN apt-get update && \
+    apt-get install -y gnupg curl ca-certificates && \
+    curl -fsSL https://pgp.mongodb.com/server-6.0.asc -o /usr/share/keyrings/mongodb-server-6.0.asc && \
+    gpg --dearmor --no-tty /usr/share/keyrings/mongodb-server-6.0.asc && \
+    mv /usr/share/keyrings/mongodb-server-6.0.asc.gpg /usr/share/keyrings/mongodb-server-6.0.gpg && \
+    echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-6.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list && \
+    apt-get update && \
+    apt-get install -y mongodb-org-shell mongodb-org-tools && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+
+USER jovyan
+
+
